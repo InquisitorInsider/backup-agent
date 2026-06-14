@@ -3,15 +3,15 @@
 Mismo patrón que el print-agent: GitHub construye la imagen y la publica en GHCR;
 en OMV solo pegas un compose y pulsas Up.
 
-## 1. Subir el proyecto a GitHub
-Repo sugerido (privado): `InquisitorInsider/backup-agent`. Al hacer push a `main`,
-el workflow `.github/workflows/docker-publish.yml` construye y publica
+## 1. GitHub construye la imagen
+Repo **público**: `InquisitorInsider/backup-agent`. Al hacer push a `main`, el
+workflow `.github/workflows/docker-publish.yml` construye y publica
 `ghcr.io/inquisitorinsider/backup-agent` (amd64 + arm64).
 
-## 2. Login en GHCR desde la Pi (una vez; imagen privada)
-```bash
-echo "TU_TOKEN_read:packages" | sudo docker login ghcr.io -u inquisitorinsider --password-stdin
-```
+## 2. Poner el paquete en público (una sola vez)
+Tras el primer build, el paquete en GHCR nace privado. Hazlo público una vez:
+GitHub → tu perfil → **Packages** → `backup-agent` → **Package settings** →
+**Change visibility** → **Public**. Después la Pi lo baja **sin** `docker login`.
 
 ## 3. Desplegar en OMV
 1. OMV → **Compose → Files → Add (+)**, nómbralo `backup-agent`.

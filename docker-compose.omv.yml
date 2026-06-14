@@ -1,7 +1,8 @@
 # backup-agent — compose de DESPLIEGUE para OMV (descarga la imagen de GHCR).
 # Pega esto en OMV -> Compose -> Files -> Add (+), nómbralo backup-agent.
-# La imagen es privada -> antes haz una vez en la Pi:
-#   echo "TOKEN_read:packages" | sudo docker login ghcr.io -u inquisitorinsider --password-stdin
+# Repo e imagen PÚBLICOS: no hace falta docker login para bajar la imagen.
+# (Una sola vez, tras el primer build: pon el paquete en público desde
+#  GitHub -> tu perfil -> Packages -> backup-agent -> Package settings -> Public.)
 
 services:
   backup-agent:
