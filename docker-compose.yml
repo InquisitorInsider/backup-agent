@@ -1,0 +1,33 @@
+# backup-agent — compose para CONSTRUIR localmente (desarrollo/prueba).
+# Para desplegar en OMV con la imagen ya publicada, usa docker-compose.omv.yml.
+
+services:
+  backup-agent:
+    build: .
+    image: backup-agent:latest
+    container_name: backup-agent
+    restart: unless-stopped
+    environment:
+      ADMIN_USER: "admin"
+      ADMIN_PASSWORD: "CAMBIA-ESTA-CLAVE"
+      TZ: "America/Lima"
+    ports:
+      - "8090:8000"
+    volumes:
+      # Datos del panel (config, historial, logs).
+      - backup-agent-data:/data
+      # Socket de Docker: necesario para autoescaneo y dumps de bases.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Config de OMV (solo lectura) para respaldarla.
+      - /etc/openmediavault:/host/etc-openmediavault:ro
+      # Config de rclone compartida (reusa tus remotes, p. ej. onedrive_restaurante).
+      - /srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252/compose/Nextcloud/rclone_config:/config/rclone
+      # Discos de datos (solo lectura): para leer volúmenes y definiciones compose.
+      - /srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252:/srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252:ro
+      - /srv/dev-disk-by-uuid-7469580d-0da7-4fef-bbed-250bdc899d08:/srv/dev-disk-by-uuid-7469580d-0da7-4fef-bbed-250bdc899d08:ro
+      # Carpeta local de destino opcional (lectura/escritura).
+      - /srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252/Respaldos:/destino-local
+
+volumes:
+  backup-agent-data:
+    name: backup-agent-data
