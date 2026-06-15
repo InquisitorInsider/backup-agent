@@ -68,8 +68,10 @@ def api_get_settings(_: None = Depends(require_admin)) -> dict[str, Any]:
 class SettingsIn(BaseModel):
     include_omv_config: bool | None = None
     include_manifest: bool | None = None
+    include_system_identities: bool | None = None
     volumes: list[str] | None = None
     compose_roots: list[str] | None = None
+    compose_stacks: list[str] | None = None
     databases: list[str] | None = None
     destinations: list[dict[str, Any]] | None = None
     schedule: dict[str, Any] | None = None

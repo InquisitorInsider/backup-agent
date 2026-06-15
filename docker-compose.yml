@@ -20,6 +20,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Config de OMV (solo lectura) para respaldarla.
       - /etc/openmediavault:/host/etc-openmediavault:ro
+      # Identidades del sistema (usuarios/contraseñas/Samba), solo lectura.
+      - /etc:/host/etc:ro
+      - /var/lib/samba:/host/samba:ro
       # Config de rclone compartida (reusa tus remotes, p. ej. onedrive_restaurante).
       - /srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252/compose/Nextcloud/rclone_config:/config/rclone
       # Discos de datos (solo lectura): para leer volúmenes y definiciones compose.

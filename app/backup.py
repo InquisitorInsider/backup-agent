@@ -71,6 +71,21 @@ def _copy_compose(root: str, dest: str) -> None:
                     return
             except OSError:
                 continue
+    # Rescate de archivos importantes que viven dentro de carpetas podadas
+    # (ej. el config.php de Nextcloud, en <stack>/html/config/config.php).
+    import glob
+    for pat in ("*/html/config/config.php", "*/config/config.php", "*/.env"):
+        for src in glob.glob(os.path.join(root, pat)):
+            try:
+                if os.path.getsize(src) > small_cap:
+                    continue
+                rel = os.path.relpath(os.path.dirname(src), root)
+                td = os.path.join(dest, rel)
+                os.makedirs(td, exist_ok=True)
+                shutil.copy2(src, os.path.join(td, os.path.basename(src)))
+                copied += 1
+            except OSError:
+                continue
     settings.log(f"  compose: {copied} archivos de definición/config copiados de {root}")
 
 
@@ -174,12 +189,40 @@ def run_backup(trigger: str = "manual") -> dict[str, Any]:
             with open(os.path.join(man, "inventario.json"), "w", encoding="utf-8") as fh:
                 json.dump(inv, fh, ensure_ascii=False, indent=2)
 
-        # 3) compose seleccionados
-        for root in cfg.get("compose_roots", []):
-            if os.path.isdir(root):
-                settings.log(f"copiando compose: {root}")
-                base = root.strip("/").replace("/", "_")
-                _copy_compose(root, os.path.join(stage, "compose", base))
+        # 3) compose: preferir stacks individuales; si no, raíces completas
+        stacks_sel = cfg.get("compose_stacks", [])
+        if stacks_sel:
+            for sp in stacks_sel:
+                if os.path.isdir(sp):
+                    settings.log(f"copiando stack: {os.path.basename(sp)}")
+                    _copy_compose(sp, os.path.join(stage, "compose", os.path.basename(sp)))
+        else:
+            for root in cfg.get("compose_roots", []):
+                if os.path.isdir(root):
+                    settings.log(f"copiando compose: {root}")
+                    base = root.strip("/").replace("/", "_")
+                    _copy_compose(root, os.path.join(stage, "compose", base))
+
+        # 3b) identidades del sistema (usuarios/contraseñas/Samba) — opt-in
+        if cfg.get("include_system_identities"):
+            settings.log("copiando identidades del sistema (usuarios/Samba)...")
+            ident = os.path.join(stage, "identidades")
+            os.makedirs(ident, exist_ok=True)
+            for f in ("passwd", "shadow", "group", "gshadow"):
+                src = os.path.join(config.SYS_ETC_DIR, f)
+                if os.path.exists(src):
+                    try:
+                        shutil.copy2(src, os.path.join(ident, f))
+                    except OSError as exc:
+                        settings.log(f"  {f}: {exc}")
+            for sub, dst in ((os.path.join(config.SYS_ETC_DIR, "samba"), "etc-samba"),
+                             (config.SAMBA_DIR, "var-lib-samba")):
+                if os.path.isdir(sub):
+                    try:
+                        shutil.copytree(sub, os.path.join(ident, dst),
+                                        dirs_exist_ok=True, ignore_dangling_symlinks=True)
+                    except OSError as exc:
+                        settings.log(f"  {dst}: {exc}")
 
         # 4) volúmenes seleccionados
         if cli is not None and cfg.get("volumes"):

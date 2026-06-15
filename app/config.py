@@ -29,10 +29,14 @@ COMPOSE_ROOTS = [
 # Carpeta local opcional para destino "local" (montada RW en el contenedor).
 LOCAL_DEST_DIR = os.environ.get("LOCAL_DEST_DIR", "/destino-local")
 
+# Identidades del sistema (usuarios, contraseñas, Samba) — montadas solo lectura.
+SYS_ETC_DIR = os.environ.get("SYS_ETC_DIR", "/host/etc")     # /etc del host
+SAMBA_DIR = os.environ.get("SAMBA_DIR", "/host/samba")       # /var/lib/samba del host
+
 # Saltar archivos individuales mayores a esto al copiar definiciones de compose.
 MAX_FILE_MB = int(os.environ.get("MAX_FILE_MB", "50"))
 
 # Zona horaria (informativa; el contenedor usa TZ del entorno).
 TZ = os.environ.get("TZ", "America/Lima")
 
-VERSION = "1.0.1"
+VERSION = "1.1.0"

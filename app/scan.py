@@ -73,9 +73,11 @@ def _db_from_env(env: list[str], kind: str) -> dict[str, str]:
 def scan() -> dict[str, Any]:
     inv: dict[str, Any] = {
         "omv": {"available": False},
+        "system_identities": {"available": False},
         "volumes": [],
         "databases": [],
         "compose_roots": [],
+        "stacks": [],
         "containers": [],
         "errors": [],
     }
@@ -147,28 +149,41 @@ def scan() -> dict[str, Any]:
                 "recommended": recommended,
             })
 
-    # --- Stacks de compose ---
+    # --- Stacks de compose (listados uno por uno) ---
+    running = {c.name for c in (cli.containers.list() if cli is not None else [])} \
+        if cli is not None else set()
     for root in config.COMPOSE_ROOTS:
         if not os.path.isdir(root):
             continue
-        stacks = []
+        names = []
         try:
             for entry in sorted(os.listdir(root)):
                 d = os.path.join(root, entry)
                 if not os.path.isdir(d):
                     continue
-                has_compose = any(
-                    f.endswith((".yml", ".yaml")) for f in os.listdir(d)
-                )
-                if has_compose:
-                    stacks.append(entry)
+                if any(f.endswith((".yml", ".yaml")) for f in os.listdir(d)):
+                    names.append(entry)
+                    inv["stacks"].append({
+                        "name": entry,
+                        "path": d,
+                        "root": root,
+                        "recommended": True,
+                    })
         except OSError as exc:
             inv["errors"].append(f"No se pudo leer {root}: {exc}")
         inv["compose_roots"].append({
-            "path": root,
-            "size": _dir_size(root),
-            "stacks": stacks,
-            "recommended": True,
+            "path": root, "stacks": names, "recommended": True,
         })
+
+    # --- Identidades del sistema (usuarios/contraseñas/Samba) ---
+    files = []
+    for f in ("passwd", "shadow", "group", "gshadow"):
+        if os.path.exists(os.path.join(config.SYS_ETC_DIR, f)):
+            files.append("/etc/" + f)
+    if os.path.isdir(os.path.join(config.SYS_ETC_DIR, "samba")):
+        files.append("/etc/samba")
+    if os.path.isdir(config.SAMBA_DIR):
+        files.append("/var/lib/samba")
+    inv["system_identities"] = {"available": bool(files), "items": files}
 
     return inv

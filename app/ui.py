@@ -134,6 +134,10 @@ function renderScan(){
   h+=chk('omv','Configuración de OMV (config.xml)', CFG.include_omv_config!==false,
         omv.available?omv.size_kb+' KB':'no encontrado', omv.available?[{t:'recomendado',c:'rec'}]:[]);
   h+=chk('manifest','Manifiesto (plugins, paquetes, fstab, discos)', CFG.include_manifest!==false,'',[{t:'recomendado',c:'rec'}]);
+  const si=INV.system_identities||{};
+  h+=chk('sysid','Identidades del sistema (usuarios, contraseñas, Samba)', CFG.include_system_identities===true,
+     si.available?(si.items||[]).join(', '):'no disponible (monta /etc y /var/lib/samba)',
+     [{t:'sensible',c:'heavy'}]);
   $('base').innerHTML=h;
 
   $('dbs').innerHTML=(INV.databases||[]).map(d=>chk('db:'+d.key,
@@ -149,10 +153,10 @@ function renderScan(){
      return chk('vol:'+v.name, v.name, def, v.size, tags);
   }).join('')||'<span class="muted">—</span>';
 
-  $('comp').innerHTML=(INV.compose_roots||[]).map(c=>chk('comp:'+c.path,
-     c.path.split('/').slice(-2).join('/'),
-     CFG.compose_roots?sel(CFG.compose_roots,c.path):c.recommended,
-     c.size+' · '+(c.stacks||[]).length+' stacks', [{t:'recomendado',c:'rec'}]
+  const useSel=CFG.compose_stacks&&CFG.compose_stacks.length;
+  $('comp').innerHTML=(INV.stacks||[]).map(s=>chk('stack:'+s.path,
+     s.name, useSel?sel(CFG.compose_stacks,s.path):s.recommended,
+     s.root.split('/').slice(-2,-1)[0]||'', [{t:'recomendado',c:'rec'}]
   )).join('')||'<span class="muted">—</span>';
 }
 
@@ -186,13 +190,14 @@ function renderSchedule(){
 function collect(){
   const get=k=>document.querySelector(`input[data-k="${k}"]`);
   const out={include_omv_config:get('omv')?.checked, include_manifest:get('manifest')?.checked,
-     volumes:[],databases:[],compose_roots:[],destinations:CFG.destinations||[],
+     include_system_identities:get('sysid')?.checked,
+     volumes:[],databases:[],compose_roots:[],compose_stacks:[],destinations:CFG.destinations||[],
      schedule:{enabled:$('schEnabled').checked,time:$('schTime').value,retention_days:+$('schRet').value}};
   document.querySelectorAll('input[data-k]').forEach(el=>{
      if(!el.checked)return; const k=el.dataset.k;
      if(k.startsWith('vol:'))out.volumes.push(k.slice(4));
      else if(k.startsWith('db:'))out.databases.push(k.slice(3));
-     else if(k.startsWith('comp:'))out.compose_roots.push(k.slice(5));
+     else if(k.startsWith('stack:'))out.compose_stacks.push(k.slice(6));
   });
   return out;
 }

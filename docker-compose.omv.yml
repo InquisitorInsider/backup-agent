@@ -20,6 +20,9 @@ services:
       - backup-agent-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/openmediavault:/host/etc-openmediavault:ro
+      # Identidades del sistema (usuarios/contraseñas/Samba), solo lectura:
+      - /etc:/host/etc:ro
+      - /var/lib/samba:/host/samba:ro
       - /srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252/compose/Nextcloud/rclone_config:/config/rclone
       - /srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252:/srv/dev-disk-by-uuid-18d0f5c7-6a18-42e3-a170-b5d57fa8e252:ro
       - /srv/dev-disk-by-uuid-7469580d-0da7-4fef-bbed-250bdc899d08:/srv/dev-disk-by-uuid-7469580d-0da7-4fef-bbed-250bdc899d08:ro

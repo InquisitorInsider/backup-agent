@@ -22,8 +22,10 @@ DEFAULTS: dict[str, Any] = {
     # Qué respaldar
     "include_omv_config": True,
     "include_manifest": True,
+    "include_system_identities": False,  # usuarios/contraseñas/Samba (opt-in, sensible)
     "volumes": [],          # nombres de volúmenes Docker seleccionados
-    "compose_roots": [],     # raíces de compose seleccionadas (de config.COMPOSE_ROOTS)
+    "compose_roots": [],     # raíces de compose seleccionadas (compat; modo "todo")
+    "compose_stacks": [],    # rutas de stacks individuales seleccionados (preferido)
     "databases": [],         # claves "contenedor/base" seleccionadas
     # A dónde respaldar: lista de destinos
     # cada uno: {"id":..., "type":"rclone"|"local", "remote":"onedrive_restaurante",

@@ -31,6 +31,15 @@ Abre `http://IP-DEL-SERVIDOR:8090` (usuario/clave del compose).
 4. Pulsa **Guardar configuración**.
 5. Prueba con **Respaldar ahora** y mira el historial y el registro.
 
+## Novedades v1.1
+- Los **stacks se listan uno por uno** en el panel (los marcas individualmente).
+- Casilla **"Identidades del sistema"** (usuarios, contraseñas, Samba): respalda
+  `/etc/passwd|shadow|group|gshadow`, `/etc/samba` y `/var/lib/samba`. Es
+  **opcional** (viene desmarcada) porque mete hashes de contraseñas en el paquete.
+  Requiere los montajes `/etc` y `/var/lib/samba` que ya trae el compose v1.1
+  → si actualizas desde una versión previa, vuelve a copiar `docker-compose.omv.yml`.
+- Se rescata el `config.php` de Nextcloud aunque se pode el resto de `html/`.
+
 ## Notas
 - Las credenciales de las bases se leen en caliente del entorno de cada
   contenedor; no se guardan en disco.
