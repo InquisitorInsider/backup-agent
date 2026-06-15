@@ -23,22 +23,55 @@ def is_running() -> bool:
     return _STATE["running"]
 
 
+# Carpetas que NUNCA se recorren (datos pesados de los stacks: medios, cachés,
+# metadatos de Plex/Jellyfin, instalación de Nextcloud, descargas, etc.).
+_SKIP_DIRS = {
+    "data", "_data", "config", "cache", "caches", "metadata", "media", "movies",
+    "tv", "series", "music", "downloads", "download", "incomplete", "transcode",
+    "transcodes", "thumbnails", "previews", "node_modules", "logs", "log",
+    "appdata", "html", "www", "vendor", "backups", "backup", "db-data", "postgres",
+}
+# Solo se copian archivos de DEFINICIÓN/configuración (no datos).
+_DEF_EXT = (".yml", ".yaml", ".env", ".conf", ".cfg", ".ini", ".toml", ".json",
+            ".sh", ".dockerfile", ".xml", ".txt", ".md", ".service")
+_DEF_NAMES = ("dockerfile", "caddyfile", ".env", "compose.override.yml")
+
+
 def _copy_compose(root: str, dest: str) -> None:
-    max_bytes = config.MAX_FILE_MB * 1024 * 1024
+    """Copia SOLO las definiciones/configs de los stacks (no sus datos).
+    Poda carpetas pesadas, limita la profundidad y aplica un tope de archivos
+    para que nunca pueda colgarse aunque un stack tenga datos enormes dentro."""
+    small_cap = 5 * 1024 * 1024          # 5 MB por archivo de config
+    max_files = 3000                      # tope duro de seguridad
+    copied = 0
+    root_depth = root.rstrip("/").count("/")
     for dirpath, dirnames, filenames in os.walk(root):
-        # saltar carpetas de datos pesados
-        dirnames[:] = [d for d in dirnames if d.lower() not in ("data", "node_modules")]
+        depth = dirpath.rstrip("/").count("/") - root_depth
+        # podar: nada de carpetas pesadas, ocultas, ni bajar más de 3 niveles
+        if depth >= 3:
+            dirnames[:] = []
+        else:
+            dirnames[:] = [d for d in dirnames
+                           if d.lower() not in _SKIP_DIRS and not d.startswith(".")]
         rel = os.path.relpath(dirpath, root)
         target_dir = os.path.join(dest, rel) if rel != "." else dest
         for f in filenames:
+            low = f.lower()
+            if not (low.endswith(_DEF_EXT) or low in _DEF_NAMES):
+                continue
             src = os.path.join(dirpath, f)
             try:
-                if os.path.islink(src) or os.path.getsize(src) > max_bytes:
+                if os.path.islink(src) or os.path.getsize(src) > small_cap:
                     continue
                 os.makedirs(target_dir, exist_ok=True)
                 shutil.copy2(src, os.path.join(target_dir, f))
+                copied += 1
+                if copied >= max_files:
+                    settings.log(f"  aviso: tope de {max_files} archivos en {root}; corto aquí")
+                    return
             except OSError:
                 continue
+    settings.log(f"  compose: {copied} archivos de definición/config copiados de {root}")
 
 
 def _dump_database(cli, key: str, dest_dir: str) -> bool:

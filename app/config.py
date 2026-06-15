@@ -35,4 +35,4 @@ MAX_FILE_MB = int(os.environ.get("MAX_FILE_MB", "50"))
 # Zona horaria (informativa; el contenedor usa TZ del entorno).
 TZ = os.environ.get("TZ", "America/Lima")
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
